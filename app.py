@@ -122,15 +122,15 @@ def calculate_etf_returns(initial_investment, monthly_investment, monthly_income
 def main():
     # App configuration using session state to persist settings
     if 'language' not in st.session_state:
-        st.session_state.language = "en"
+        st.session_state.language = "de"
     
     # Add language selector to the top right corner
     language = st.sidebar.selectbox(
         "Language/Sprache", 
-        options=["en", "de"],
-        format_func=lambda x: "English" if x == "en" else "Deutsch",
+        options=["de", "en"],
+        format_func=lambda x: "Deutsch" if x == "de" else "English",
         key="language",
-        help="Select language/Sprache wählen"
+        help="Sprache wählen/Select language"
     )
     
     # Translate text based on selected language
@@ -156,7 +156,7 @@ def main():
             t["down_payment"], 
             min_value=0, 
             max_value=purchase_price,
-            value=int(purchase_price * 0.2),
+            value=int(purchase_price * 0.1),
             help="The amount you plan to pay upfront"
         )
 
@@ -164,7 +164,7 @@ def main():
             t["interest_rate"], 
             min_value=0.0, 
             max_value=20.0, 
-            value=4.5,
+            value=4.0,
             step=0.1,
             help="Annual interest rate for the mortgage"
         )
