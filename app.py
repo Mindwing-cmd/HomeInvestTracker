@@ -166,26 +166,27 @@ def main():
     
     # Import/Export Section in sidebar
     st.sidebar.markdown("---")
-    if st.sidebar.button(t.get("export_parameters", "Export Parameters")):
-        parameters = {
-            "purchase_price": st.session_state.get("purchase_price", 300000),
-            "down_payment": st.session_state.get("down_payment", 30000),
-            "interest_rate": st.session_state.get("interest_rate", 4.0),
-            "repayment_rate": st.session_state.get("repayment_rate", 2.0),
-            "monthly_expenses": st.session_state.get("monthly_expenses", 500),
-            "rental_income": st.session_state.get("rental_income", 2500),
-            "appreciation_rate": st.session_state.get("appreciation_rate", 3.0),
-            "rent_increase_rate": st.session_state.get("rent_increase_rate", 1.5),
-            "tax_rate": st.session_state.get("tax_rate", 42.0),
-            "afa_rate": st.session_state.get("afa_rate", 2.0),
-            "rent_increases": st.session_state.get("rent_increases", [])
-        }
-        st.sidebar.download_button(
-            label=t.get("download_parameters", "Download Parameters"),
-            data=json.dumps(parameters, indent=4),
-            file_name="investment_parameters.json",
-            mime="application/json"
-        )
+    # Prepare export parameters
+    parameters = {
+        "purchase_price": st.session_state.get("purchase_price", 300000),
+        "down_payment": st.session_state.get("down_payment", 30000),
+        "interest_rate": st.session_state.get("interest_rate", 4.0),
+        "repayment_rate": st.session_state.get("repayment_rate", 2.0),
+        "monthly_expenses": st.session_state.get("monthly_expenses", 500),
+        "rental_income": st.session_state.get("rental_income", 2500),
+        "appreciation_rate": st.session_state.get("appreciation_rate", 3.0),
+        "rent_increase_rate": st.session_state.get("rent_increase_rate", 1.5),
+        "tax_rate": st.session_state.get("tax_rate", 42.0),
+        "afa_rate": st.session_state.get("afa_rate", 2.0),
+        "rent_increases": st.session_state.get("rent_increases", [])
+    }
+    # Direct download button instead of two-step process
+    st.sidebar.download_button(
+        label=t.get("export_parameters", "Export Parameters"),
+        data=json.dumps(parameters, indent=4),
+        file_name="investment_parameters.json",
+        mime="application/json"
+    )
     
     uploaded_file = st.sidebar.file_uploader(t.get("import_parameters", "Import Parameters"), type=["json"])
     if uploaded_file is not None:
