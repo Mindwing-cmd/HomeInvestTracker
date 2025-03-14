@@ -1,12 +1,26 @@
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
+import numpy as np
 from calculator import (
     calculate_mortgage_payment,
     calculate_amortization_schedule,
     calculate_investment_metrics,
     calculate_loan_term
 )
+
+def calculate_etf_returns(initial_investment, monthly_investment, years, annual_return=0.07):
+    """Calculate ETF investment returns over time."""
+    months = int(years * 12)
+    monthly_return = (1 + annual_return) ** (1/12) - 1
+
+    balance = [initial_investment]
+    for month in range(1, months + 1):
+        prev_balance = balance[-1]
+        new_balance = (prev_balance + monthly_investment) * (1 + monthly_return)
+        balance.append(new_balance)
+
+    return balance
 
 def main():
     st.title("German Real Estate Investment Calculator")
@@ -174,6 +188,80 @@ def main():
         amort_schedule = calculate_amortization_schedule(
             purchase_price, down_payment, interest_rate, repayment_rate, afa_rate, tax_rate)
 
+        # Interest vs Repayment Plot
+        fig_payment = go.Figure()
+        fig_payment.add_trace(go.Scatter(
+            x=amort_schedule['Month'],
+            y=amort_schedule['Interest'].cumsum(),
+            name='Total Interest Paid',
+            fill='tozeroy'
+        ))
+        fig_payment.add_trace(go.Scatter(
+            x=amort_schedule['Month'],
+            y=amort_schedule['Principal'].cumsum(),
+            name='Total Principal Paid',
+            fill='tonexty'
+        ))
+        fig_payment.update_layout(
+            title="Cumulative Interest vs Principal Payments",
+            xaxis_title="Month",
+            yaxis_title="Amount (€)"
+        )
+        st.plotly_chart(fig_payment, use_container_width=True)
+
+        # Investment Returns Comparison
+        months = list(range(int(loan_term * 12) + 1))
+        rent_only = [month * rental_income for month in months]
+        rent_tax = [month * (rental_income + metrics['monthly_tax_benefit']) for month in months]
+        property_values = [purchase_price * (1 + appreciation_rate/100) ** (year/12) for year in months]
+        total_returns = [r + t + (v - purchase_price) for r, t, v in zip(rent_only, rent_tax, property_values)]
+
+        fig_returns = go.Figure()
+        fig_returns.add_trace(go.Scatter(
+            x=months,
+            y=rent_only,
+            name='Rental Income Only',
+            line=dict(dash='dot')
+        ))
+        fig_returns.add_trace(go.Scatter(
+            x=months,
+            y=rent_tax,
+            name='Rent + Tax Benefits',
+            line=dict(dash='dash')
+        ))
+        fig_returns.add_trace(go.Scatter(
+            x=months,
+            y=total_returns,
+            name='Total Return (incl. Appreciation)',
+            line=dict(dash='solid')
+        ))
+
+        # Add ETF comparison
+        etf_returns = calculate_etf_returns(
+            down_payment,
+            metrics['monthly_mortgage'] + monthly_expenses,
+            loan_term
+        )
+        fig_returns.add_trace(go.Scatter(
+            x=months[:len(etf_returns)],
+            y=etf_returns,
+            name='ETF Investment (7% annual)',
+            line=dict(dash='longdash')
+        ))
+
+        fig_returns.update_layout(
+            title="Investment Returns Comparison",
+            xaxis_title="Month",
+            yaxis_title="Total Return (€)",
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="left",
+                x=0.01
+            )
+        )
+        st.plotly_chart(fig_returns, use_container_width=True)
+
         # Cumulative equity and tax benefits
         fig = go.Figure()
         fig.add_trace(go.Scatter(
@@ -194,6 +282,7 @@ def main():
             yaxis_title="Amount (€)"
         )
         st.plotly_chart(fig, use_container_width=True)
+
 
         # Property Value Projection
         years = list(range(int(loan_term) + 1))
