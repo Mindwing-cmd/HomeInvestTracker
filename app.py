@@ -203,8 +203,17 @@ def main():
     st.title(t["title"])
     st.write(t["subtitle"])
 
-    # Input Section - Collapsible
-    with st.expander(t["investment_details"], expanded=False):
+    # Set sidebar to collapsed by default
+    st.markdown("""
+    <style>
+    [data-testid="collapsedControl"] {
+        display: none
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Input Section - Expanded by default
+    with st.expander(t["investment_details"], expanded=True):
         col1, col2 = st.columns(2)
 
         with col1:
@@ -282,8 +291,8 @@ def main():
                 help="Expected annual rent increase rate"
             )
 
-    # Tax Settings - Collapsible
-    with st.expander(t["tax_settings"], expanded=False):
+    # Tax Settings - Expanded by default
+    with st.expander(t["tax_settings"], expanded=True):
         col1, col2 = st.columns(2)
 
         with col1:
