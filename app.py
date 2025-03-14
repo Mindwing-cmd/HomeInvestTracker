@@ -164,47 +164,46 @@ def main():
     # Translate text based on selected language
     t = translations[language]
     
+    # Import/Export Section in sidebar
+    st.sidebar.markdown("---")
+    if st.sidebar.button(t.get("export_parameters", "Export Parameters")):
+        parameters = {
+            "purchase_price": st.session_state.get("purchase_price", 300000),
+            "down_payment": st.session_state.get("down_payment", 30000),
+            "interest_rate": st.session_state.get("interest_rate", 4.0),
+            "repayment_rate": st.session_state.get("repayment_rate", 2.0),
+            "monthly_expenses": st.session_state.get("monthly_expenses", 500),
+            "rental_income": st.session_state.get("rental_income", 2500),
+            "appreciation_rate": st.session_state.get("appreciation_rate", 3.0),
+            "rent_increase_rate": st.session_state.get("rent_increase_rate", 1.5),
+            "tax_rate": st.session_state.get("tax_rate", 42.0),
+            "afa_rate": st.session_state.get("afa_rate", 2.0),
+            "rent_increases": st.session_state.get("rent_increases", [])
+        }
+        st.sidebar.download_button(
+            label=t.get("download_parameters", "Download Parameters"),
+            data=json.dumps(parameters, indent=4),
+            file_name="investment_parameters.json",
+            mime="application/json"
+        )
+    
+    uploaded_file = st.sidebar.file_uploader(t.get("import_parameters", "Import Parameters"), type=["json"])
+    if uploaded_file is not None:
+        try:
+            parameters = json.load(uploaded_file)
+            for key, value in parameters.items():
+                st.session_state[key] = value
+            st.sidebar.success(t.get("import_success", "Parameters successfully imported"))
+            st.rerun()
+        except Exception as e:
+            st.sidebar.error(f"Error importing parameters: {str(e)}")
+    st.sidebar.markdown("---")
+    
     st.title(t["title"])
     st.write(t["subtitle"])
 
-    # Import/Export Section
-    import_export_col1, import_export_col2 = st.columns(2)
-    with import_export_col1:
-        if st.button(t.get("export_parameters", "Export Parameters")):
-            parameters = {
-                "purchase_price": st.session_state.get("purchase_price", 300000),
-                "down_payment": st.session_state.get("down_payment", 30000),
-                "interest_rate": st.session_state.get("interest_rate", 4.0),
-                "repayment_rate": st.session_state.get("repayment_rate", 2.0),
-                "monthly_expenses": st.session_state.get("monthly_expenses", 500),
-                "rental_income": st.session_state.get("rental_income", 2500),
-                "appreciation_rate": st.session_state.get("appreciation_rate", 3.0),
-                "rent_increase_rate": st.session_state.get("rent_increase_rate", 1.5),
-                "tax_rate": st.session_state.get("tax_rate", 42.0),
-                "afa_rate": st.session_state.get("afa_rate", 2.0),
-                "rent_increases": st.session_state.get("rent_increases", [])
-            }
-            st.download_button(
-                label=t.get("download_parameters", "Download Parameters"),
-                data=json.dumps(parameters, indent=4),
-                file_name="investment_parameters.json",
-                mime="application/json"
-            )
-    
-    with import_export_col2:
-        uploaded_file = st.file_uploader(t.get("import_parameters", "Import Parameters"), type=["json"])
-        if uploaded_file is not None:
-            try:
-                parameters = json.load(uploaded_file)
-                for key, value in parameters.items():
-                    st.session_state[key] = value
-                st.success(t.get("import_success", "Parameters successfully imported"))
-                st.rerun()
-            except Exception as e:
-                st.error(f"Error importing parameters: {str(e)}")
-
     # Input Section - Collapsible
-    with st.expander(t["investment_details"], expanded=True):
+    with st.expander(t["investment_details"], expanded=False):
         col1, col2 = st.columns(2)
 
         with col1:
@@ -283,7 +282,7 @@ def main():
             )
 
     # Tax Settings - Collapsible
-    with st.expander(t["tax_settings"], expanded=True):
+    with st.expander(t["tax_settings"], expanded=False):
         col1, col2 = st.columns(2)
 
         with col1:
@@ -309,7 +308,7 @@ def main():
             )
             
     # Rent increase simulation - Collapsible full width section
-    with st.expander(t["rent_increase_simulation"], expanded=True):
+    with st.expander(t["rent_increase_simulation"], expanded=False):
         # Initialize session state for rent increases if not exists
         if 'rent_increases' not in st.session_state:
             st.session_state.rent_increases = []
