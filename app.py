@@ -148,6 +148,9 @@ def calculate_etf_returns(initial_investment, monthly_investment, monthly_income
     return balance
 
 def main():
+    # Configure page settings including sidebar collapse
+    st.set_page_config(initial_sidebar_state="collapsed")
+    
     # App configuration using session state to persist settings
     if 'language' not in st.session_state:
         st.session_state.language = "de"
@@ -203,14 +206,8 @@ def main():
     st.title(t["title"])
     st.write(t["subtitle"])
 
-    # Set sidebar to collapsed by default
-    st.markdown("""
-    <style>
-    [data-testid="collapsedControl"] {
-        display: none
-    }
-    </style>
-    """, unsafe_allow_html=True)
+    # Configure initial sidebar collapsed state
+    st.set_page_config(initial_sidebar_state="collapsed")
     
     # Input Section - Expanded by default
     with st.expander(t["investment_details"], expanded=True):
