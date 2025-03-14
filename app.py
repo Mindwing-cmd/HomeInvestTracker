@@ -231,38 +231,8 @@ def main():
             help="Expected annual rent increase rate"
         )
         
-        # Rent increase simulation
-        st.write(t["rent_increase_simulation"])
-        
-        # Initialize session state for rent increases if not exists
-        if 'rent_increases' not in st.session_state:
-            st.session_state.rent_increases = []
-            
-        # Display the current rent increases in a table
-        if st.session_state.rent_increases:
-            increase_df = pd.DataFrame(st.session_state.rent_increases)
-            st.dataframe(increase_df)
-            
-        # Add new rent increase
-        with st.expander(t["add_rent_increase"]):
-            col1, col2, col3 = st.columns([2, 2, 1])
-            with col1:
-                new_year = st.number_input(t["increase_year"], min_value=1, max_value=50, value=5)
-            with col2:
-                new_amount = st.number_input(t["increase_amount"], min_value=0, value=100)
-            with col3:
-                if st.button(t["add_increase"]):
-                    # Add new increase to the list
-                    st.session_state.rent_increases.append({
-                        "Year": new_year,
-                        "Amount": new_amount
-                    })
-                    st.rerun()
-        
-        # Clear all increases
-        if st.button(t["clear_increases"]):
-            st.session_state.rent_increases = []
-            st.rerun()
+        # Rent increase simulation - Moving this outside the columns to take full width
+    st.write("")  # Add some spacing
 
     # Tax Settings
     st.header(t["tax_settings"])
@@ -287,6 +257,38 @@ def main():
             step=0.1,
             help="Depreciation rate (typically 2% for residential properties)"
         )
+        
+    # Rent increase simulation - Full width section
+    st.header(t["rent_increase_simulation"])
+    
+    # Initialize session state for rent increases if not exists
+    if 'rent_increases' not in st.session_state:
+        st.session_state.rent_increases = []
+        
+    # Display the current rent increases in a table (full width)
+    if st.session_state.rent_increases:
+        increase_df = pd.DataFrame(st.session_state.rent_increases)
+        st.dataframe(increase_df, use_container_width=True)
+        
+    # Add new rent increase
+    col1, col2, col3 = st.columns([3, 3, 1])
+    with col1:
+        new_year = st.number_input(t["increase_year"], min_value=1, max_value=50, value=5)
+    with col2:
+        new_amount = st.number_input(t["increase_amount"], min_value=0, value=100)
+    with col3:
+        if st.button(t["add_increase"]):
+            # Add new increase to the list
+            st.session_state.rent_increases.append({
+                "Year": new_year,
+                "Amount": new_amount
+            })
+            st.rerun()
+    
+    # Clear all increases
+    if st.button(t["clear_increases"]):
+        st.session_state.rent_increases = []
+        st.rerun()
 
     # Calculate metrics
     try:
