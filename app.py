@@ -9,15 +9,17 @@ from calculator import (
     calculate_loan_term
 )
 
-def calculate_etf_returns(initial_investment, monthly_investment, years, annual_return=0.07):
-    """Calculate ETF investment returns over time."""
+def calculate_etf_returns(initial_investment, monthly_investment, monthly_income, years, annual_return=0.07):
+    """Calculate ETF investment returns over time with monthly cash flows."""
     months = int(years * 12)
     monthly_return = (1 + annual_return) ** (1/12) - 1
 
     balance = [initial_investment]
     for month in range(1, months + 1):
         prev_balance = balance[-1]
-        new_balance = (prev_balance + monthly_investment) * (1 + monthly_return)
+        # Add monthly rental income and subtract monthly expenses/mortgage
+        monthly_cash_flow = monthly_income - monthly_investment
+        new_balance = (prev_balance + monthly_cash_flow) * (1 + monthly_return)
         balance.append(new_balance)
 
     return balance
@@ -184,11 +186,32 @@ def main():
         monthly_breakdown.update_layout(title="Monthly Cash Flow Breakdown")
         st.plotly_chart(monthly_breakdown, use_container_width=True)
 
-        # Amortization Schedule
+        # Monthly Interest vs Principal Payments
         amort_schedule = calculate_amortization_schedule(
             purchase_price, down_payment, interest_rate, repayment_rate, afa_rate, tax_rate)
 
-        # Interest vs Repayment Plot
+        fig_monthly = go.Figure()
+        fig_monthly.add_trace(go.Scatter(
+            x=amort_schedule['Month'],
+            y=amort_schedule['Interest'],
+            name='Monthly Interest',
+            line=dict(dash='solid')
+        ))
+        fig_monthly.add_trace(go.Scatter(
+            x=amort_schedule['Month'],
+            y=amort_schedule['Principal'],
+            name='Monthly Principal',
+            line=dict(dash='solid')
+        ))
+        fig_monthly.update_layout(
+            title="Monthly Interest vs Principal Payments",
+            xaxis_title="Month",
+            yaxis_title="Amount (€)"
+        )
+        st.plotly_chart(fig_monthly, use_container_width=True)
+
+
+        # Cumulative Interest vs Principal Plot
         fig_payment = go.Figure()
         fig_payment.add_trace(go.Scatter(
             x=amort_schedule['Month'],
@@ -236,10 +259,11 @@ def main():
             line=dict(dash='solid')
         ))
 
-        # Add ETF comparison
+        # Add ETF comparison with monthly cash flows
         etf_returns = calculate_etf_returns(
             down_payment,
             metrics['monthly_mortgage'] + monthly_expenses,
+            rental_income,
             loan_term
         )
         fig_returns.add_trace(go.Scatter(
@@ -282,7 +306,6 @@ def main():
             yaxis_title="Amount (€)"
         )
         st.plotly_chart(fig, use_container_width=True)
-
 
         # Property Value Projection
         years = list(range(int(loan_term) + 1))
