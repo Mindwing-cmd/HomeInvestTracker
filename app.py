@@ -57,7 +57,13 @@ translations = {
         "language": "Language",
         "theme": "Theme",
         "light": "Light",
-        "dark": "Dark"
+        "dark": "Dark",
+        "rent_increase_simulation": "Rent Increase Simulation",
+        "add_rent_increase": "Add Rent Increase",
+        "increase_year": "Year",
+        "increase_amount": "Amount (€)",
+        "add_increase": "Add",
+        "clear_increases": "Clear All Increases"
     },
     "de": {
         "title": "Deutscher Immobilieninvestitionsrechner",
@@ -102,7 +108,13 @@ translations = {
         "language": "Sprache",
         "theme": "Thema",
         "light": "Hell",
-        "dark": "Dunkel"
+        "dark": "Dunkel",
+        "rent_increase_simulation": "Mieterhöhungssimulation",
+        "add_rent_increase": "Mieterhöhung hinzufügen",
+        "increase_year": "Jahr",
+        "increase_amount": "Betrag (€)",
+        "add_increase": "Hinzufügen",
+        "clear_increases": "Alle Erhöhungen löschen"
     }
 }
 
@@ -217,6 +229,39 @@ def main():
             step=0.1,
             help="Expected annual rent increase rate"
         )
+        
+        # Rent increase simulation
+        st.write(t["rent_increase_simulation"])
+        
+        # Initialize session state for rent increases if not exists
+        if 'rent_increases' not in st.session_state:
+            st.session_state.rent_increases = []
+            
+        # Display the current rent increases in a table
+        if st.session_state.rent_increases:
+            increase_df = pd.DataFrame(st.session_state.rent_increases)
+            st.dataframe(increase_df)
+            
+        # Add new rent increase
+        with st.expander(t["add_rent_increase"]):
+            col1, col2, col3 = st.columns([2, 2, 1])
+            with col1:
+                new_year = st.number_input(t["increase_year"], min_value=1, max_value=50, value=5)
+            with col2:
+                new_amount = st.number_input(t["increase_amount"], min_value=0, value=100)
+            with col3:
+                if st.button(t["add_increase"]):
+                    # Add new increase to the list
+                    st.session_state.rent_increases.append({
+                        "Year": new_year,
+                        "Amount": new_amount
+                    })
+                    st.experimental_rerun()
+        
+        # Clear all increases
+        if st.button(t["clear_increases"]):
+            st.session_state.rent_increases = []
+            st.experimental_rerun()
 
     # Tax Settings
     st.header(t["tax_settings"])
@@ -304,10 +349,26 @@ def main():
 
         # Calculate rent with increases over time
         rent_values = []
+        
+        # Get custom rent increases from session state
+        custom_increases = {}
+        if st.session_state.rent_increases:
+            for item in st.session_state.rent_increases:
+                custom_increases[item["Year"]] = item["Amount"]
+        
         for month in months:
             year = month / 12
-            increased_rent = rental_income * (1 + rent_increase_rate/100) ** year
-            rent_values.append(increased_rent)
+            current_year = int(year)
+            
+            # Start with base rent and apply general increase rate
+            current_rent = rental_income * (1 + rent_increase_rate/100) ** year
+            
+            # Apply custom increases for years before or at the current year
+            for inc_year, inc_amount in custom_increases.items():
+                if inc_year <= current_year:
+                    current_rent += inc_amount
+                    
+            rent_values.append(current_rent)
         
         rent_only = [rent_values[month] * month for month in months]
         rent_tax = [(rent_values[month] + metrics['monthly_tax_benefit']) * month for month in months]

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import streamlit as st
 
 def calculate_loan_term(principal, down_payment, interest_rate, repayment_rate):
     """Calculate loan term based on repayment rate."""
@@ -105,10 +106,29 @@ def calculate_investment_metrics(purchase_price, down_payment, interest_rate, re
     # Calculate average rental income over the loan term (with rent increases)
     avg_rental_income = 0
     total_rent = 0
+    
+    # Setup for custom rent increases
+    custom_increases = {}
+    if 'rent_increases' in st.session_state:
+        for item in st.session_state.rent_increases:
+            custom_increases[item["Year"]] = item["Amount"]
+    
     for month in range(1, int(loan_term * 12) + 1):
         year = month / 12
-        increased_rent = rental_income * (1 + rent_increase_rate/100) ** year
-        total_rent += increased_rent
+        current_year = int(year)
+        
+        # Start with base rent
+        current_rent = rental_income
+        
+        # Apply general increase rate
+        current_rent = rental_income * (1 + rent_increase_rate/100) ** year
+        
+        # Apply custom increases for years before or at the current year
+        for inc_year, inc_amount in custom_increases.items():
+            if inc_year <= current_year:
+                current_rent += inc_amount
+        
+        total_rent += current_rent
     
     if loan_term > 0:
         avg_rental_income = total_rent / (loan_term * 12)
