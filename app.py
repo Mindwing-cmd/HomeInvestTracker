@@ -192,75 +192,61 @@ def main():
 
         fig_monthly = go.Figure()
         fig_monthly.add_trace(go.Scatter(
-            x=amort_schedule['Month'],
+            x=amort_schedule['Month'] / 12,  # Convert to years
             y=amort_schedule['Interest'],
             name='Monthly Interest',
             line=dict(dash='solid')
         ))
         fig_monthly.add_trace(go.Scatter(
-            x=amort_schedule['Month'],
+            x=amort_schedule['Month'] / 12,  # Convert to years
             y=amort_schedule['Principal'],
             name='Monthly Principal',
             line=dict(dash='solid')
         ))
         fig_monthly.update_layout(
             title="Monthly Interest vs Principal Payments",
-            xaxis_title="Month",
+            xaxis_title="Year",
             yaxis_title="Amount (€)"
         )
         st.plotly_chart(fig_monthly, use_container_width=True)
 
-
-        # Cumulative Interest vs Principal Plot
-        fig_payment = go.Figure()
-        fig_payment.add_trace(go.Scatter(
-            x=amort_schedule['Month'],
-            y=amort_schedule['Interest'].cumsum(),
-            name='Total Interest Paid',
-            fill='tozeroy'
-        ))
-        fig_payment.add_trace(go.Scatter(
-            x=amort_schedule['Month'],
-            y=amort_schedule['Principal'].cumsum(),
-            name='Total Principal Paid',
-            fill='tonexty'
-        ))
-        fig_payment.update_layout(
-            title="Cumulative Interest vs Principal Payments",
-            xaxis_title="Month",
-            yaxis_title="Amount (€)"
-        )
-        st.plotly_chart(fig_payment, use_container_width=True)
-
         # Investment Returns Comparison
+        years = np.linspace(0, loan_term, int(loan_term * 12) + 1)
         months = list(range(int(loan_term * 12) + 1))
+
         rent_only = [month * rental_income for month in months]
         rent_tax = [month * (rental_income + metrics['monthly_tax_benefit']) for month in months]
-        property_values = [purchase_price * (1 + appreciation_rate/100) ** (year/12) for year in months]
-        total_returns = [r + t + (v - purchase_price) for r, t, v in zip(rent_only, rent_tax, property_values)]
         monthly_payments = [month * (metrics['monthly_mortgage'] + monthly_expenses) for month in months]
+        property_values = [purchase_price * (1 + appreciation_rate/100) ** (year) for year in years]
+        total_returns = [r + t + (v - purchase_price) for r, t, v in zip(rent_only, rent_tax, property_values)]
 
         fig_returns = go.Figure()
         fig_returns.add_trace(go.Scatter(
-            x=months,
+            x=years,
             y=monthly_payments,
             name='Total Monthly Payments',
             line=dict(dash='dot', color='red')
         ))
         fig_returns.add_trace(go.Scatter(
-            x=months,
+            x=years,
             y=rent_only,
             name='Rental Income Only',
             line=dict(dash='dot')
         ))
         fig_returns.add_trace(go.Scatter(
-            x=months,
+            x=years,
             y=rent_tax,
             name='Rent + Tax Benefits',
             line=dict(dash='dash')
         ))
         fig_returns.add_trace(go.Scatter(
-            x=months,
+            x=years,
+            y=property_values,
+            name='Property Value',
+            line=dict(dash='dashdot')
+        ))
+        fig_returns.add_trace(go.Scatter(
+            x=years,
             y=total_returns,
             name='Total Return (incl. Appreciation)',
             line=dict(dash='solid')
@@ -274,7 +260,7 @@ def main():
             loan_term
         )
         fig_returns.add_trace(go.Scatter(
-            x=months[:len(etf_returns)],
+            x=years[:len(etf_returns)],
             y=etf_returns,
             name='ETF Investment (7% annual)',
             line=dict(dash='longdash')
@@ -282,7 +268,7 @@ def main():
 
         fig_returns.update_layout(
             title="Investment Returns Comparison",
-            xaxis_title="Month",
+            xaxis_title="Year",
             yaxis_title="Total Return (€)",
             legend=dict(
                 yanchor="top",
@@ -292,27 +278,6 @@ def main():
             )
         )
         st.plotly_chart(fig_returns, use_container_width=True)
-
-        # Cumulative equity and tax benefits
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=amort_schedule['Month'],
-            y=amort_schedule['Principal'].cumsum(),
-            name='Principal Paid',
-            fill='tozeroy'
-        ))
-        fig.add_trace(go.Scatter(
-            x=amort_schedule['Month'],
-            y=amort_schedule['Tax Benefit'].cumsum(),
-            name='Cumulative Tax Benefits',
-            fill='tonexty'
-        ))
-        fig.update_layout(
-            title="Cumulative Principal Paid and Tax Benefits Over Time",
-            xaxis_title="Month",
-            yaxis_title="Amount (€)"
-        )
-        st.plotly_chart(fig, use_container_width=True)
 
         # Property Value Projection
         years = list(range(int(loan_term) + 1))
