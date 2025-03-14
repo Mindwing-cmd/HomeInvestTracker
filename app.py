@@ -1,3 +1,4 @@
+
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
@@ -119,43 +120,90 @@ def calculate_etf_returns(initial_investment, monthly_investment, monthly_income
     return balance
 
 def main():
-    # App configuration in sidebar
-    with st.sidebar:
-        # Language selector
+    # CSS for top-right settings
+    st.markdown("""
+    <style>
+    .top-right-container {
+        position: fixed;
+        top: 0.5rem;
+        right: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        z-index: 1000;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 0.5rem;
+        padding: 0.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    .small-select select {
+        padding: 0.1rem 0.5rem !important;
+        font-size: 0.8rem !important;
+        height: 1.8rem !important;
+        min-width: 5rem !important;
+    }
+    .small-select label {
+        display: none !important;
+    }
+    </style>
+    <div class="top-right-container">
+        <div class="small-select" id="language-select"></div>
+        <div class="small-select" id="theme-select"></div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Create placeholders for the controls
+    language_placeholder = st.empty()
+    theme_placeholder = st.empty()
+    
+    # App configuration using session state to persist settings
+    if 'language' not in st.session_state:
+        st.session_state.language = "en"
+    if 'theme' not in st.session_state:
+        st.session_state.theme = "light"
+    
+    # Inject the controls into the placeholders using HTML
+    with language_placeholder:
         language = st.selectbox(
             "Language/Sprache", 
             options=["en", "de"],
             format_func=lambda x: "English" if x == "en" else "Deutsch",
-            key="language"
+            key="language",
+            help="Select language/Sprache wählen"
         )
-        
-        # Theme selector
+        st.markdown('<script>document.getElementById("language-select").appendChild(document.querySelector("[data-testid=\'stSelectbox\']:nth-of-type(1)"));</script>', unsafe_allow_html=True)
+    
+    with theme_placeholder:
         theme = st.selectbox(
-            translations[language]["theme"], 
+            "Theme/Thema", 
             options=["light", "dark"],
-            format_func=lambda x: translations[language]["light"] if x == "light" else translations[language]["dark"],
-            key="theme"
+            format_func=lambda x: "Light/Hell" if x == "light" else "Dark/Dunkel",
+            key="theme",
+            help="Select theme/Thema wählen"
         )
-        
-        # Apply theme
-        if theme == "dark":
-            st.markdown("""
-            <style>
-                .stApp {
-                    background-color: #0E1117;
-                    color: #FAFAFA;
-                }
-            </style>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <style>
-                .stApp {
-                    background-color: #FFFFFF;
-                    color: #111111;
-                }
-            </style>
-            """, unsafe_allow_html=True)
+        st.markdown('<script>document.getElementById("theme-select").appendChild(document.querySelector("[data-testid=\'stSelectbox\']:nth-of-type(1)"));</script>', unsafe_allow_html=True)
+    
+    # Apply theme
+    if theme == "dark":
+        st.markdown("""
+        <style>
+            .stApp {
+                background-color: #0E1117;
+                color: #FAFAFA;
+            }
+            .top-right-container {
+                background-color: rgba(14, 17, 23, 0.8);
+            }
+        </style>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <style>
+            .stApp {
+                background-color: #FFFFFF;
+                color: #111111;
+            }
+        </style>
+        """, unsafe_allow_html=True)
     
     # Translate text based on selected language
     t = translations[language]
