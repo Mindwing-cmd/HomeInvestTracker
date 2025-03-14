@@ -27,7 +27,7 @@ def calculate_mortgage_payment(principal, down_payment, interest_rate, repayment
     monthly_total_rate = (interest_rate + repayment_rate) / 12 / 100
     return loan_amount * monthly_total_rate
 
-def calculate_tax_benefits(purchase_price, loan_amount, interest_rate, afa_rate, tax_rate, month):
+def calculate_tax_benefits(purchase_price, loan_amount, interest_rate, afa_rate, tax_rate, month, repayment_rate):
     """Calculate monthly tax benefits from interest and depreciation."""
     # Calculate remaining loan and interest payment
     years_passed = month / 12
@@ -66,7 +66,7 @@ def calculate_amortization_schedule(principal, down_payment, interest_rate, repa
     for month in range(1, num_payments + 1):
         # Calculate tax benefits
         tax_benefits = calculate_tax_benefits(
-            principal, loan_amount, interest_rate, afa_rate, tax_rate, month)
+            principal, loan_amount, interest_rate, afa_rate, tax_rate, month, repayment_rate)
 
         # Calculate interest and principal portions
         interest_payment = remaining_balance * (interest_rate / 12 / 100)
@@ -100,7 +100,7 @@ def calculate_investment_metrics(purchase_price, down_payment, interest_rate, re
     # Calculate first month's tax benefits
     loan_amount = purchase_price - down_payment
     initial_tax_benefits = calculate_tax_benefits(
-        purchase_price, loan_amount, interest_rate, afa_rate, tax_rate, 1)
+        purchase_price, loan_amount, interest_rate, afa_rate, tax_rate, 1, repayment_rate)
 
     # Monthly cash flow (including tax benefits)
     monthly_cash_flow = (rental_income 
