@@ -185,31 +185,31 @@ def main():
             x=years,
             y=monthly_payments,
             name='Total Monthly Payments',
-            line=dict(dash='dot', color='red')
+            line=dict(dash='dot', color='#ff4d4d')
         ))
         fig_returns.add_trace(go.Scatter(
             x=years,
             y=rent_only,
             name='Rental Income Only',
-            line=dict(dash='dot')
+            line=dict(dash='dot', color='#2E86C1')
         ))
         fig_returns.add_trace(go.Scatter(
             x=years,
             y=rent_tax,
             name='Rent + Tax Benefits',
-            line=dict(dash='dash')
+            line=dict(dash='dash', color='#27AE60')
         ))
         fig_returns.add_trace(go.Scatter(
             x=years,
             y=property_values,
             name='Property Value',
-            line=dict(dash='dashdot')
+            line=dict(dash='dashdot', color='#3498DB')
         ))
         fig_returns.add_trace(go.Scatter(
             x=years,
             y=total_returns,
             name='Total Return (incl. Appreciation)',
-            line=dict(dash='solid')
+            line=dict(dash='solid', color='#2ECC71')
         ))
 
         # Add ETF comparison with monthly cash flows
@@ -249,7 +249,8 @@ def main():
                     metrics['monthly_tax_benefit'],
                     metrics['monthly_cash_flow']
                 ],
-                hole=0.4
+                hole=0.4,
+                marker_colors=['#ff4d4d', '#ff6666', '#27AE60', '#2ECC71']
             )
         ])
         monthly_breakdown.update_layout(title="Monthly Cash Flow Breakdown")
@@ -264,13 +265,13 @@ def main():
             x=amort_schedule['Month'] / 12,  # Convert to years
             y=amort_schedule['Interest'],
             name='Monthly Interest',
-            line=dict(dash='solid')
+            line=dict(dash='solid', color='#ff4d4d')
         ))
         fig_monthly.add_trace(go.Scatter(
             x=amort_schedule['Month'] / 12,  # Convert to years
             y=amort_schedule['Principal'],
             name='Monthly Principal',
-            line=dict(dash='solid')
+            line=dict(dash='solid', color='#2E86C1')
         ))
         fig_monthly.update_layout(
             title="Monthly Interest vs Principal Payments",
