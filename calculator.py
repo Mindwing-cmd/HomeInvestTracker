@@ -88,8 +88,8 @@ def calculate_amortization_schedule(principal, down_payment, interest_rate, repa
 
 def calculate_investment_metrics(purchase_price, down_payment, interest_rate, repayment_rate,
                               monthly_expenses, rental_income, appreciation_rate,
-                              afa_rate, tax_rate):
-    """Calculate various investment metrics including tax benefits."""
+                              afa_rate, tax_rate, rent_increase_rate=0.0):
+    """Calculate various investment metrics including tax benefits and rent increases."""
     # Calculate loan term based on repayment rate
     loan_term = calculate_loan_term(purchase_price, down_payment, interest_rate, repayment_rate)
 
@@ -102,15 +102,28 @@ def calculate_investment_metrics(purchase_price, down_payment, interest_rate, re
     initial_tax_benefits = calculate_tax_benefits(
         purchase_price, loan_amount, interest_rate, afa_rate, tax_rate, 1, repayment_rate)
 
-    # Monthly cash flow (including tax benefits)
+    # Calculate average rental income over the loan term (with rent increases)
+    avg_rental_income = 0
+    total_rent = 0
+    for month in range(1, int(loan_term * 12) + 1):
+        year = month / 12
+        increased_rent = rental_income * (1 + rent_increase_rate/100) ** year
+        total_rent += increased_rent
+    
+    if loan_term > 0:
+        avg_rental_income = total_rent / (loan_term * 12)
+    else:
+        avg_rental_income = rental_income
+
+    # We still use rental_income for initial cash flow (first month)
     monthly_cash_flow = (rental_income 
                         - (monthly_mortgage + monthly_expenses) 
                         + initial_tax_benefits['tax_benefit'])
 
-    # Annual cash flow
+    # Annual cash flow (using initial rental income)
     annual_cash_flow = monthly_cash_flow * 12
 
-    # Cash on cash return
+    # Cash on cash return (based on initial investment and initial cash flow)
     initial_investment = down_payment  # Simplified, normally would include closing costs
     cash_on_cash_return = (annual_cash_flow / initial_investment) * 100
 
@@ -136,5 +149,6 @@ def calculate_investment_metrics(purchase_price, down_payment, interest_rate, re
         'future_value': future_value,
         'total_equity': total_equity,
         'monthly_tax_benefit': initial_tax_benefits['tax_benefit'],
-        'annual_tax_benefit': avg_annual_tax_benefit
+        'annual_tax_benefit': avg_annual_tax_benefit,
+        'avg_rental_income': avg_rental_income
     }

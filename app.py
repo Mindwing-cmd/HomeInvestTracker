@@ -46,6 +46,7 @@ translations = {
         "year": "Year",
         "total_return_euro": "Total Return (€)",
         "monthly_breakdown": "Monthly Cash Flow Breakdown",
+        "rent_increase_rate": "Annual Rent Increase Rate (%)",
         "mortgage_payment": "Mortgage Payment",
         "other_expenses": "Other Expenses",
         "tax_benefits": "Tax Benefits",
@@ -90,6 +91,7 @@ translations = {
         "year": "Jahr",
         "total_return_euro": "Gesamtrendite (€)",
         "monthly_breakdown": "Aufschlüsselung des monatlichen Cashflows",
+        "rent_increase_rate": "Jährliche Mieterhöhungsrate (%)",
         "mortgage_payment": "Hypothekenzahlung",
         "other_expenses": "Andere Ausgaben",
         "tax_benefits": "Steuervorteile",
@@ -104,16 +106,21 @@ translations = {
     }
 }
 
-def calculate_etf_returns(initial_investment, monthly_investment, monthly_income, years, annual_return=0.07):
-    """Calculate ETF investment returns over time with monthly cash flows."""
+def calculate_etf_returns(initial_investment, monthly_investment, monthly_income, years, annual_return=0.07, rent_increase_rate=0.0):
+    """Calculate ETF investment returns over time with monthly cash flows and rent increases."""
     months = int(years * 12)
     monthly_return = (1 + annual_return) ** (1/12) - 1
 
     balance = [initial_investment]
     for month in range(1, months + 1):
         prev_balance = balance[-1]
+        
+        # Calculate rent with increases
+        year = month / 12
+        increased_rent = monthly_income * (1 + rent_increase_rate/100) ** year
+        
         # Add monthly rental income and subtract monthly expenses/mortgage
-        monthly_cash_flow = monthly_income - monthly_investment
+        monthly_cash_flow = increased_rent - monthly_investment
         new_balance = (prev_balance + monthly_cash_flow) * (1 + monthly_return)
         balance.append(new_balance)
 
@@ -201,6 +208,15 @@ def main():
             step=0.1,
             help="Expected annual property value appreciation rate"
         )
+        
+        rent_increase_rate = st.number_input(
+            t["rent_increase_rate"], 
+            min_value=0.0, 
+            max_value=10.0, 
+            value=1.5,
+            step=0.1,
+            help="Expected annual rent increase rate"
+        )
 
     # Tax Settings
     st.header(t["tax_settings"])
@@ -240,7 +256,8 @@ def main():
             rental_income,
             appreciation_rate,
             afa_rate,
-            tax_rate
+            tax_rate,
+            rent_increase_rate
         )
 
         # Results Section
@@ -285,8 +302,15 @@ def main():
         years = np.linspace(0, loan_term, int(loan_term * 12) + 1)
         months = list(range(int(loan_term * 12) + 1))
 
-        rent_only = [month * rental_income for month in months]
-        rent_tax = [month * (rental_income + metrics['monthly_tax_benefit']) for month in months]
+        # Calculate rent with increases over time
+        rent_values = []
+        for month in months:
+            year = month / 12
+            increased_rent = rental_income * (1 + rent_increase_rate/100) ** year
+            rent_values.append(increased_rent)
+        
+        rent_only = [rent_values[month] * month for month in months]
+        rent_tax = [(rent_values[month] + metrics['monthly_tax_benefit']) * month for month in months]
         monthly_payments = [month * (metrics['monthly_mortgage'] + monthly_expenses) for month in months]
         property_values = [purchase_price * (1 + appreciation_rate/100) ** year for year in years]
         total_returns = [r + t + (v - purchase_price) for r, t, v in zip(rent_only, rent_tax, property_values)]
@@ -328,7 +352,9 @@ def main():
             down_payment,
             metrics['monthly_mortgage'] + monthly_expenses,
             rental_income,
-            loan_term
+            loan_term,
+            0.07,  # 7% annual return
+            rent_increase_rate
         )
         fig_returns.add_trace(go.Scatter(
             x=years[:len(etf_returns)],
