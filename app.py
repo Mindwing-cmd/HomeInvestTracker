@@ -2,12 +2,106 @@ import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
+import json
+import os
 from calculator import (
     calculate_mortgage_payment,
     calculate_amortization_schedule,
     calculate_investment_metrics,
     calculate_loan_term
 )
+
+# Translation dictionaries
+translations = {
+    "en": {
+        "title": "German Real Estate Investment Calculator",
+        "subtitle": "Analyze your potential real estate investment with this buy and hold calculator, including German tax benefits (AFA).",
+        "investment_details": "Investment Details",
+        "purchase_price": "Purchase Price (€)",
+        "down_payment": "Down Payment (€)",
+        "interest_rate": "Interest Rate (%)",
+        "repayment_rate": "Initial Repayment Rate (%)",
+        "monthly_expenses": "Monthly Expenses (€)",
+        "rental_income": "Monthly Rental Income (€)",
+        "appreciation_rate": "Annual Appreciation Rate (%)",
+        "tax_settings": "Tax Settings",
+        "income_tax": "Income Tax Rate (%)",
+        "afa_rate": "AFA Rate (%)",
+        "investment_analysis": "Investment Analysis",
+        "monthly_mortgage": "Monthly Mortgage Payment",
+        "loan_term": "Loan Term",
+        "monthly_cash_flow": "Monthly Cash Flow",
+        "monthly_tax_benefit": "Monthly Tax Benefit",
+        "cash_on_cash": "Cash on Cash Return",
+        "annual_tax_benefit": "Annual Tax Benefit",
+        "visualizations": "Visualizations",
+        "total_payments": "Total Monthly Payments",
+        "rental_income_only": "Rental Income Only",
+        "rent_tax": "Rent + Tax Benefits",
+        "property_value": "Property Value",
+        "total_return": "Total Return (incl. Appreciation)",
+        "etf_investment": "ETF Investment (7% annual)",
+        "investment_returns": "Investment Returns Comparison",
+        "year": "Year",
+        "total_return_euro": "Total Return (€)",
+        "monthly_breakdown": "Monthly Cash Flow Breakdown",
+        "mortgage_payment": "Mortgage Payment",
+        "other_expenses": "Other Expenses",
+        "tax_benefits": "Tax Benefits",
+        "net_cash_flow": "Net Cash Flow",
+        "monthly_interest": "Monthly Interest",
+        "monthly_principal": "Monthly Principal",
+        "amount_euro": "Amount (€)",
+        "language": "Language",
+        "theme": "Theme",
+        "light": "Light",
+        "dark": "Dark"
+    },
+    "de": {
+        "title": "Deutscher Immobilieninvestitionsrechner",
+        "subtitle": "Analysieren Sie Ihre potenzielle Immobilieninvestition mit diesem Kauf-und-Halte-Rechner, einschließlich deutscher Steuervorteile (AfA).",
+        "investment_details": "Investitionsdetails",
+        "purchase_price": "Kaufpreis (€)",
+        "down_payment": "Anzahlung (€)",
+        "interest_rate": "Zinssatz (%)",
+        "repayment_rate": "Anfängliche Tilgungsrate (%)",
+        "monthly_expenses": "Monatliche Ausgaben (€)",
+        "rental_income": "Monatliche Mieteinnahmen (€)",
+        "appreciation_rate": "Jährliche Wertsteigerungsrate (%)",
+        "tax_settings": "Steuereinstellungen",
+        "income_tax": "Einkommensteuersatz (%)",
+        "afa_rate": "AfA-Satz (%)",
+        "investment_analysis": "Investitionsanalyse",
+        "monthly_mortgage": "Monatliche Hypothekenzahlung",
+        "loan_term": "Kreditlaufzeit",
+        "monthly_cash_flow": "Monatlicher Cashflow",
+        "monthly_tax_benefit": "Monatlicher Steuervorteil",
+        "cash_on_cash": "Cash-on-Cash-Rendite",
+        "annual_tax_benefit": "Jährlicher Steuervorteil",
+        "visualizations": "Visualisierungen",
+        "total_payments": "Gesamte monatliche Zahlungen",
+        "rental_income_only": "Nur Mieteinnahmen",
+        "rent_tax": "Miete + Steuervorteile",
+        "property_value": "Immobilienwert",
+        "total_return": "Gesamtrendite (inkl. Wertsteigerung)",
+        "etf_investment": "ETF-Investition (7% jährlich)",
+        "investment_returns": "Vergleich der Investitionsrenditen",
+        "year": "Jahr",
+        "total_return_euro": "Gesamtrendite (€)",
+        "monthly_breakdown": "Aufschlüsselung des monatlichen Cashflows",
+        "mortgage_payment": "Hypothekenzahlung",
+        "other_expenses": "Andere Ausgaben",
+        "tax_benefits": "Steuervorteile",
+        "net_cash_flow": "Netto-Cashflow",
+        "monthly_interest": "Monatliche Zinsen",
+        "monthly_principal": "Monatliche Tilgung",
+        "amount_euro": "Betrag (€)",
+        "language": "Sprache",
+        "theme": "Thema",
+        "light": "Hell",
+        "dark": "Dunkel"
+    }
+}
 
 def calculate_etf_returns(initial_investment, monthly_investment, monthly_income, years, annual_return=0.07):
     """Calculate ETF investment returns over time with monthly cash flows."""
@@ -25,24 +119,65 @@ def calculate_etf_returns(initial_investment, monthly_investment, monthly_income
     return balance
 
 def main():
-    st.title("German Real Estate Investment Calculator")
-    st.write("Analyze your potential real estate investment with this buy and hold calculator, including German tax benefits (AFA).")
+    # App configuration in sidebar
+    with st.sidebar:
+        # Language selector
+        language = st.selectbox(
+            "Language/Sprache", 
+            options=["en", "de"],
+            format_func=lambda x: "English" if x == "en" else "Deutsch",
+            key="language"
+        )
+        
+        # Theme selector
+        theme = st.selectbox(
+            translations[language]["theme"], 
+            options=["light", "dark"],
+            format_func=lambda x: translations[language]["light"] if x == "light" else translations[language]["dark"],
+            key="theme"
+        )
+        
+        # Apply theme
+        if theme == "dark":
+            st.markdown("""
+            <style>
+                .stApp {
+                    background-color: #0E1117;
+                    color: #FAFAFA;
+                }
+            </style>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <style>
+                .stApp {
+                    background-color: #FFFFFF;
+                    color: #111111;
+                }
+            </style>
+            """, unsafe_allow_html=True)
+    
+    # Translate text based on selected language
+    t = translations[language]
+    
+    st.title(t["title"])
+    st.write(t["subtitle"])
 
     # Input Section
-    st.header("Investment Details")
+    st.header(t["investment_details"])
 
     col1, col2 = st.columns(2)
 
     with col1:
         purchase_price = st.number_input(
-            "Purchase Price (€)", 
+            t["purchase_price"], 
             min_value=0, 
             value=300000,
             help="The total purchase price of the property"
         )
 
         down_payment = st.number_input(
-            "Down Payment (€)", 
+            t["down_payment"], 
             min_value=0, 
             max_value=purchase_price,
             value=int(purchase_price * 0.2),
@@ -50,7 +185,7 @@ def main():
         )
 
         interest_rate = st.number_input(
-            "Interest Rate (%)", 
+            t["interest_rate"], 
             min_value=0.0, 
             max_value=20.0, 
             value=4.5,
@@ -59,7 +194,7 @@ def main():
         )
 
         repayment_rate = st.number_input(
-            "Initial Repayment Rate (%)", 
+            t["repayment_rate"], 
             min_value=0.1, 
             max_value=20.0, 
             value=2.0,
@@ -69,21 +204,21 @@ def main():
 
     with col2:
         monthly_expenses = st.number_input(
-            "Monthly Expenses (€)", 
+            t["monthly_expenses"], 
             min_value=0, 
             value=500,
             help="Total monthly expenses including taxes, insurance, and maintenance"
         )
 
         rental_income = st.number_input(
-            "Monthly Rental Income (€)", 
+            t["rental_income"], 
             min_value=0, 
             value=2500,
             help="Expected monthly rental income"
         )
 
         appreciation_rate = st.number_input(
-            "Annual Appreciation Rate (%)", 
+            t["appreciation_rate"], 
             min_value=-10.0, 
             max_value=20.0, 
             value=3.0,
@@ -92,12 +227,12 @@ def main():
         )
 
     # Tax Settings
-    st.header("Tax Settings")
+    st.header(t["tax_settings"])
     col1, col2 = st.columns(2)
 
     with col1:
         tax_rate = st.number_input(
-            "Income Tax Rate (%)",
+            t["income_tax"],
             min_value=0.0,
             max_value=45.0,
             value=42.0,
@@ -107,7 +242,7 @@ def main():
 
     with col2:
         afa_rate = st.number_input(
-            "AFA Rate (%)",
+            t["afa_rate"],
             min_value=0.0,
             max_value=5.0,
             value=2.0,
@@ -133,42 +268,42 @@ def main():
         )
 
         # Results Section
-        st.header("Investment Analysis")
+        st.header(t["investment_analysis"])
 
         col1, col2, col3 = st.columns(3)
 
         with col1:
             st.metric(
-                "Monthly Mortgage Payment",
+                t["monthly_mortgage"],
                 f"€{metrics['monthly_mortgage']:,.2f}"
             )
             st.metric(
-                "Loan Term",
-                f"{metrics['loan_term']:.1f} years"
+                t["loan_term"],
+                f"{metrics['loan_term']:.1f} {'years' if language == 'en' else 'Jahre'}"
             )
 
         with col2:
             st.metric(
-                "Monthly Cash Flow",
+                t["monthly_cash_flow"],
                 f"€{metrics['monthly_cash_flow']:,.2f}"
             )
             st.metric(
-                "Monthly Tax Benefit",
+                t["monthly_tax_benefit"],
                 f"€{metrics['monthly_tax_benefit']:,.2f}"
             )
 
         with col3:
             st.metric(
-                "Cash on Cash Return",
+                t["cash_on_cash"],
                 f"{metrics['cash_on_cash_return']:.2f}%"
             )
             st.metric(
-                "Annual Tax Benefit",
+                t["annual_tax_benefit"],
                 f"€{metrics['annual_tax_benefit']:,.2f}"
             )
 
         # Visualization Section
-        st.header("Visualizations")
+        st.header(t["visualizations"])
 
         # Investment Returns Comparison
         years = np.linspace(0, loan_term, int(loan_term * 12) + 1)
@@ -184,31 +319,31 @@ def main():
         fig_returns.add_trace(go.Scatter(
             x=years,
             y=monthly_payments,
-            name='Total Monthly Payments',
+            name=t["total_payments"],
             line=dict(dash='dot', color='#ff4d4d')
         ))
         fig_returns.add_trace(go.Scatter(
             x=years,
             y=rent_only,
-            name='Rental Income Only',
+            name=t["rental_income_only"],
             line=dict(dash='dot', color='#2E86C1')
         ))
         fig_returns.add_trace(go.Scatter(
             x=years,
             y=rent_tax,
-            name='Rent + Tax Benefits',
+            name=t["rent_tax"],
             line=dict(dash='dash', color='#27AE60')
         ))
         fig_returns.add_trace(go.Scatter(
             x=years,
             y=property_values,
-            name='Property Value',
+            name=t["property_value"],
             line=dict(dash='dashdot', color='#3498DB')
         ))
         fig_returns.add_trace(go.Scatter(
             x=years,
             y=total_returns,
-            name='Total Return (incl. Appreciation)',
+            name=t["total_return"],
             line=dict(dash='solid', color='#2ECC71')
         ))
 
@@ -222,14 +357,14 @@ def main():
         fig_returns.add_trace(go.Scatter(
             x=years[:len(etf_returns)],
             y=etf_returns,
-            name='ETF Investment (7% annual)',
-            line=dict(dash='longdash')
+            name=t["etf_investment"],
+            line=dict(dash='longdash', color='#E74C3C')
         ))
 
         fig_returns.update_layout(
-            title="Investment Returns Comparison",
-            xaxis_title="Year",
-            yaxis_title="Total Return (€)",
+            title=t["investment_returns"],
+            xaxis_title=t["year"],
+            yaxis_title=t["total_return_euro"],
             legend=dict(
                 yanchor="top",
                 y=0.99,
@@ -242,7 +377,7 @@ def main():
         # Monthly Payment Breakdown
         monthly_breakdown = go.Figure(data=[
             go.Pie(
-                labels=['Mortgage Payment', 'Other Expenses', 'Tax Benefits', 'Net Cash Flow'],
+                labels=[t["mortgage_payment"], t["other_expenses"], t["tax_benefits"], t["net_cash_flow"]],
                 values=[
                     metrics['monthly_mortgage'],
                     monthly_expenses,
@@ -253,7 +388,7 @@ def main():
                 marker_colors=['#ff4d4d', '#ff6666', '#27AE60', '#2ECC71']
             )
         ])
-        monthly_breakdown.update_layout(title="Monthly Cash Flow Breakdown")
+        monthly_breakdown.update_layout(title=t["monthly_breakdown"])
         st.plotly_chart(monthly_breakdown, use_container_width=True)
 
         # Monthly Interest vs Principal Payments
@@ -264,19 +399,19 @@ def main():
         fig_monthly.add_trace(go.Scatter(
             x=amort_schedule['Month'] / 12,  # Convert to years
             y=amort_schedule['Interest'],
-            name='Monthly Interest',
+            name=t["monthly_interest"],
             line=dict(dash='solid', color='#ff4d4d')
         ))
         fig_monthly.add_trace(go.Scatter(
             x=amort_schedule['Month'] / 12,  # Convert to years
             y=amort_schedule['Principal'],
-            name='Monthly Principal',
+            name=t["monthly_principal"],
             line=dict(dash='solid', color='#2E86C1')
         ))
         fig_monthly.update_layout(
-            title="Monthly Interest vs Principal Payments",
-            xaxis_title="Year",
-            yaxis_title="Amount (€)"
+            title=t["monthly_interest"] + " vs " + t["monthly_principal"],
+            xaxis_title=t["year"],
+            yaxis_title=t["amount_euro"]
         )
         st.plotly_chart(fig_monthly, use_container_width=True)
 
