@@ -205,9 +205,6 @@ def main():
     
     st.title(t["title"])
     st.write(t["subtitle"])
-
-    # Configure initial sidebar collapsed state
-    st.set_page_config(initial_sidebar_state="collapsed")
     
     # Input Section - Expanded by default
     with st.expander(t["investment_details"], expanded=True):
