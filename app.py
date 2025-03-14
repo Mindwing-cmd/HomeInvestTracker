@@ -238,8 +238,15 @@ def main():
         rent_tax = [month * (rental_income + metrics['monthly_tax_benefit']) for month in months]
         property_values = [purchase_price * (1 + appreciation_rate/100) ** (year/12) for year in months]
         total_returns = [r + t + (v - purchase_price) for r, t, v in zip(rent_only, rent_tax, property_values)]
+        monthly_payments = [month * (metrics['monthly_mortgage'] + monthly_expenses) for month in months]
 
         fig_returns = go.Figure()
+        fig_returns.add_trace(go.Scatter(
+            x=months,
+            y=monthly_payments,
+            name='Total Monthly Payments',
+            line=dict(dash='dot', color='red')
+        ))
         fig_returns.add_trace(go.Scatter(
             x=months,
             y=rent_only,
