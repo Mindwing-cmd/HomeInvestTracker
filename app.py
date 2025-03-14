@@ -170,46 +170,6 @@ def main():
         # Visualization Section
         st.header("Visualizations")
 
-        # Monthly Payment Breakdown
-        monthly_breakdown = go.Figure(data=[
-            go.Pie(
-                labels=['Mortgage Payment', 'Other Expenses', 'Tax Benefits', 'Net Cash Flow'],
-                values=[
-                    metrics['monthly_mortgage'],
-                    monthly_expenses,
-                    metrics['monthly_tax_benefit'],
-                    metrics['monthly_cash_flow']
-                ],
-                hole=0.4
-            )
-        ])
-        monthly_breakdown.update_layout(title="Monthly Cash Flow Breakdown")
-        st.plotly_chart(monthly_breakdown, use_container_width=True)
-
-        # Monthly Interest vs Principal Payments
-        amort_schedule = calculate_amortization_schedule(
-            purchase_price, down_payment, interest_rate, repayment_rate, afa_rate, tax_rate)
-
-        fig_monthly = go.Figure()
-        fig_monthly.add_trace(go.Scatter(
-            x=amort_schedule['Month'] / 12,  # Convert to years
-            y=amort_schedule['Interest'],
-            name='Monthly Interest',
-            line=dict(dash='solid')
-        ))
-        fig_monthly.add_trace(go.Scatter(
-            x=amort_schedule['Month'] / 12,  # Convert to years
-            y=amort_schedule['Principal'],
-            name='Monthly Principal',
-            line=dict(dash='solid')
-        ))
-        fig_monthly.update_layout(
-            title="Monthly Interest vs Principal Payments",
-            xaxis_title="Year",
-            yaxis_title="Amount (€)"
-        )
-        st.plotly_chart(fig_monthly, use_container_width=True)
-
         # Investment Returns Comparison
         years = np.linspace(0, loan_term, int(loan_term * 12) + 1)
         months = list(range(int(loan_term * 12) + 1))
@@ -217,7 +177,7 @@ def main():
         rent_only = [month * rental_income for month in months]
         rent_tax = [month * (rental_income + metrics['monthly_tax_benefit']) for month in months]
         monthly_payments = [month * (metrics['monthly_mortgage'] + monthly_expenses) for month in months]
-        property_values = [purchase_price * (1 + appreciation_rate/100) ** (year) for year in years]
+        property_values = [purchase_price * (1 + appreciation_rate/100) ** year for year in years]
         total_returns = [r + t + (v - purchase_price) for r, t, v in zip(rent_only, rent_tax, property_values)]
 
         fig_returns = go.Figure()
@@ -279,17 +239,45 @@ def main():
         )
         st.plotly_chart(fig_returns, use_container_width=True)
 
-        # Property Value Projection
-        years = list(range(int(loan_term) + 1))
-        property_values = [purchase_price * (1 + appreciation_rate/100) ** year for year in years]
+        # Monthly Payment Breakdown
+        monthly_breakdown = go.Figure(data=[
+            go.Pie(
+                labels=['Mortgage Payment', 'Other Expenses', 'Tax Benefits', 'Net Cash Flow'],
+                values=[
+                    metrics['monthly_mortgage'],
+                    monthly_expenses,
+                    metrics['monthly_tax_benefit'],
+                    metrics['monthly_cash_flow']
+                ],
+                hole=0.4
+            )
+        ])
+        monthly_breakdown.update_layout(title="Monthly Cash Flow Breakdown")
+        st.plotly_chart(monthly_breakdown, use_container_width=True)
 
-        value_projection = px.line(
-            x=years,
-            y=property_values,
-            title="Projected Property Value Over Time",
-            labels={"x": "Year", "y": "Property Value (€)"}
+        # Monthly Interest vs Principal Payments
+        amort_schedule = calculate_amortization_schedule(
+            purchase_price, down_payment, interest_rate, repayment_rate, afa_rate, tax_rate)
+
+        fig_monthly = go.Figure()
+        fig_monthly.add_trace(go.Scatter(
+            x=amort_schedule['Month'] / 12,  # Convert to years
+            y=amort_schedule['Interest'],
+            name='Monthly Interest',
+            line=dict(dash='solid')
+        ))
+        fig_monthly.add_trace(go.Scatter(
+            x=amort_schedule['Month'] / 12,  # Convert to years
+            y=amort_schedule['Principal'],
+            name='Monthly Principal',
+            line=dict(dash='solid')
+        ))
+        fig_monthly.update_layout(
+            title="Monthly Interest vs Principal Payments",
+            xaxis_title="Year",
+            yaxis_title="Amount (€)"
         )
-        st.plotly_chart(value_projection, use_container_width=True)
+        st.plotly_chart(fig_monthly, use_container_width=True)
 
     except Exception as e:
         st.error(f"An error occurred in calculations: {str(e)}")
