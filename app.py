@@ -64,7 +64,11 @@ translations = {
         "increase_year": "Year",
         "increase_amount": "Amount (€)",
         "add_increase": "Add",
-        "clear_increases": "Clear All Increases"
+        "clear_increases": "Clear All Increases",
+        "export_parameters": "Export Parameters",
+        "import_parameters": "Import Parameters",
+        "download_parameters": "Download Parameters",
+        "import_success": "Parameters successfully imported"
     },
     "de": {
         "title": "Deutscher Immobilieninvestitionsrechner",
@@ -115,7 +119,11 @@ translations = {
         "increase_year": "Jahr",
         "increase_amount": "Betrag (€)",
         "add_increase": "Hinzufügen",
-        "clear_increases": "Alle Erhöhungen löschen"
+        "clear_increases": "Alle Erhöhungen löschen",
+        "export_parameters": "Parameter exportieren",
+        "import_parameters": "Parameter importieren",
+        "download_parameters": "Parameter herunterladen",
+        "import_success": "Parameter erfolgreich importiert"
     }
 }
 
@@ -159,136 +167,177 @@ def main():
     st.title(t["title"])
     st.write(t["subtitle"])
 
-    # Input Section
-    st.header(t["investment_details"])
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        purchase_price = st.number_input(
-            t["purchase_price"], 
-            min_value=0, 
-            value=300000,
-            help="The total purchase price of the property"
-        )
-
-        down_payment = st.number_input(
-            t["down_payment"], 
-            min_value=0, 
-            max_value=purchase_price,
-            value=int(purchase_price * 0.1),
-            help="The amount you plan to pay upfront"
-        )
-
-        interest_rate = st.number_input(
-            t["interest_rate"], 
-            min_value=0.0, 
-            max_value=20.0, 
-            value=4.0,
-            step=0.1,
-            help="Annual interest rate for the mortgage"
-        )
-
-        repayment_rate = st.number_input(
-            t["repayment_rate"], 
-            min_value=0.1, 
-            max_value=20.0, 
-            value=2.0,
-            step=0.1,
-            help="Annual repayment rate (affects loan term)"
-        )
-
-    with col2:
-        monthly_expenses = st.number_input(
-            t["monthly_expenses"], 
-            min_value=0, 
-            value=500,
-            help="Total monthly expenses including taxes, insurance, and maintenance"
-        )
-
-        rental_income = st.number_input(
-            t["rental_income"], 
-            min_value=0, 
-            value=2500,
-            help="Expected monthly rental income"
-        )
-
-        appreciation_rate = st.number_input(
-            t["appreciation_rate"], 
-            min_value=-10.0, 
-            max_value=20.0, 
-            value=3.0,
-            step=0.1,
-            help="Expected annual property value appreciation rate"
-        )
-        
-        rent_increase_rate = st.number_input(
-            t["rent_increase_rate"], 
-            min_value=0.0, 
-            max_value=10.0, 
-            value=1.5,
-            step=0.1,
-            help="Expected annual rent increase rate"
-        )
-        
-        # Rent increase simulation - Moving this outside the columns to take full width
-    st.write("")  # Add some spacing
-
-    # Tax Settings
-    st.header(t["tax_settings"])
-    col1, col2 = st.columns(2)
-
-    with col1:
-        tax_rate = st.number_input(
-            t["income_tax"],
-            min_value=0.0,
-            max_value=45.0,
-            value=42.0,
-            step=1.0,
-            help="Your marginal tax rate"
-        )
-
-    with col2:
-        afa_rate = st.number_input(
-            t["afa_rate"],
-            min_value=0.0,
-            max_value=5.0,
-            value=2.0,
-            step=0.1,
-            help="Depreciation rate (typically 2% for residential properties)"
-        )
-        
-    # Rent increase simulation - Full width section
-    st.header(t["rent_increase_simulation"])
+    # Import/Export Section
+    import_export_col1, import_export_col2 = st.columns(2)
+    with import_export_col1:
+        if st.button(t.get("export_parameters", "Export Parameters")):
+            parameters = {
+                "purchase_price": st.session_state.get("purchase_price", 300000),
+                "down_payment": st.session_state.get("down_payment", 30000),
+                "interest_rate": st.session_state.get("interest_rate", 4.0),
+                "repayment_rate": st.session_state.get("repayment_rate", 2.0),
+                "monthly_expenses": st.session_state.get("monthly_expenses", 500),
+                "rental_income": st.session_state.get("rental_income", 2500),
+                "appreciation_rate": st.session_state.get("appreciation_rate", 3.0),
+                "rent_increase_rate": st.session_state.get("rent_increase_rate", 1.5),
+                "tax_rate": st.session_state.get("tax_rate", 42.0),
+                "afa_rate": st.session_state.get("afa_rate", 2.0),
+                "rent_increases": st.session_state.get("rent_increases", [])
+            }
+            st.download_button(
+                label=t.get("download_parameters", "Download Parameters"),
+                data=json.dumps(parameters, indent=4),
+                file_name="investment_parameters.json",
+                mime="application/json"
+            )
     
-    # Initialize session state for rent increases if not exists
-    if 'rent_increases' not in st.session_state:
-        st.session_state.rent_increases = []
+    with import_export_col2:
+        uploaded_file = st.file_uploader(t.get("import_parameters", "Import Parameters"), type=["json"])
+        if uploaded_file is not None:
+            try:
+                parameters = json.load(uploaded_file)
+                for key, value in parameters.items():
+                    st.session_state[key] = value
+                st.success(t.get("import_success", "Parameters successfully imported"))
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error importing parameters: {str(e)}")
+
+    # Input Section - Collapsible
+    with st.expander(t["investment_details"], expanded=True):
+        col1, col2 = st.columns(2)
+
+        with col1:
+            purchase_price = st.number_input(
+                t["purchase_price"], 
+                min_value=0, 
+                value=st.session_state.get("purchase_price", 300000),
+                key="purchase_price",
+                help="The total purchase price of the property"
+            )
+
+            down_payment = st.number_input(
+                t["down_payment"], 
+                min_value=0, 
+                max_value=purchase_price,
+                value=st.session_state.get("down_payment", int(purchase_price * 0.1)),
+                key="down_payment",
+                help="The amount you plan to pay upfront"
+            )
+
+            interest_rate = st.number_input(
+                t["interest_rate"], 
+                min_value=0.0, 
+                max_value=20.0, 
+                value=st.session_state.get("interest_rate", 4.0),
+                key="interest_rate",
+                step=0.1,
+                help="Annual interest rate for the mortgage"
+            )
+
+            repayment_rate = st.number_input(
+                t["repayment_rate"], 
+                min_value=0.1, 
+                max_value=20.0, 
+                value=st.session_state.get("repayment_rate", 2.0),
+                key="repayment_rate",
+                step=0.1,
+                help="Annual repayment rate (affects loan term)"
+            )
+
+        with col2:
+            monthly_expenses = st.number_input(
+                t["monthly_expenses"], 
+                min_value=0, 
+                value=st.session_state.get("monthly_expenses", 500),
+                key="monthly_expenses",
+                help="Total monthly expenses including taxes, insurance, and maintenance"
+            )
+
+            rental_income = st.number_input(
+                t["rental_income"], 
+                min_value=0, 
+                value=st.session_state.get("rental_income", 2500),
+                key="rental_income",
+                help="Expected monthly rental income"
+            )
+
+            appreciation_rate = st.number_input(
+                t["appreciation_rate"], 
+                min_value=-10.0, 
+                max_value=20.0, 
+                value=st.session_state.get("appreciation_rate", 3.0),
+                key="appreciation_rate",
+                step=0.1,
+                help="Expected annual property value appreciation rate"
+            )
+            
+            rent_increase_rate = st.number_input(
+                t["rent_increase_rate"], 
+                min_value=0.0, 
+                max_value=10.0, 
+                value=st.session_state.get("rent_increase_rate", 1.5),
+                key="rent_increase_rate",
+                step=0.1,
+                help="Expected annual rent increase rate"
+            )
+
+    # Tax Settings - Collapsible
+    with st.expander(t["tax_settings"], expanded=True):
+        col1, col2 = st.columns(2)
+
+        with col1:
+            tax_rate = st.number_input(
+                t["income_tax"],
+                min_value=0.0,
+                max_value=45.0,
+                value=st.session_state.get("tax_rate", 42.0),
+                key="tax_rate",
+                step=1.0,
+                help="Your marginal tax rate"
+            )
+
+        with col2:
+            afa_rate = st.number_input(
+                t["afa_rate"],
+                min_value=0.0,
+                max_value=5.0,
+                value=st.session_state.get("afa_rate", 2.0),
+                key="afa_rate",
+                step=0.1,
+                help="Depreciation rate (typically 2% for residential properties)"
+            )
+            
+    # Rent increase simulation - Collapsible full width section
+    with st.expander(t["rent_increase_simulation"], expanded=True):
+        # Initialize session state for rent increases if not exists
+        if 'rent_increases' not in st.session_state:
+            st.session_state.rent_increases = []
+            
+        # Display the current rent increases in a table (full width)
+        if st.session_state.rent_increases:
+            increase_df = pd.DataFrame(st.session_state.rent_increases)
+            st.dataframe(increase_df, use_container_width=True)
+            
+        # Add new rent increase
+        col1, col2, col3 = st.columns([3, 3, 1])
+        with col1:
+            new_year = st.number_input(t["increase_year"], min_value=1, max_value=50, value=5)
+        with col2:
+            new_amount = st.number_input(t["increase_amount"], min_value=0, value=100)
+        with col3:
+            if st.button(t["add_increase"]):
+                # Add new increase to the list
+                st.session_state.rent_increases.append({
+                    "Year": new_year,
+                    "Amount": new_amount
+                })
+                st.rerun()
         
-    # Display the current rent increases in a table (full width)
-    if st.session_state.rent_increases:
-        increase_df = pd.DataFrame(st.session_state.rent_increases)
-        st.dataframe(increase_df, use_container_width=True)
-        
-    # Add new rent increase
-    col1, col2, col3 = st.columns([3, 3, 1])
-    with col1:
-        new_year = st.number_input(t["increase_year"], min_value=1, max_value=50, value=5)
-    with col2:
-        new_amount = st.number_input(t["increase_amount"], min_value=0, value=100)
-    with col3:
-        if st.button(t["add_increase"]):
-            # Add new increase to the list
-            st.session_state.rent_increases.append({
-                "Year": new_year,
-                "Amount": new_amount
-            })
+        # Clear all increases
+        if st.button(t["clear_increases"]):
+            st.session_state.rent_increases = []
             st.rerun()
-    
-    # Clear all increases
-    if st.button(t["clear_increases"]):
-        st.session_state.rent_increases = []
-        st.rerun()
 
     # Calculate metrics
     try:
