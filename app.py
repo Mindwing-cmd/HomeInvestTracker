@@ -256,12 +256,12 @@ def main():
                         "Year": new_year,
                         "Amount": new_amount
                     })
-                    st.experimental_rerun()
+                    st.rerun()
         
         # Clear all increases
         if st.button(t["clear_increases"]):
             st.session_state.rent_increases = []
-            st.experimental_rerun()
+            st.rerun()
 
     # Tax Settings
     st.header(t["tax_settings"])
